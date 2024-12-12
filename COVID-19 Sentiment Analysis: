@@ -1,0 +1,68 @@
+import tweepy
+from textblob import TextBlob
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Twitter API credentials (replace with your own credentials)
+consumer_key = 'YOUR_CONSUMER_KEY'
+consumer_secret = 'YOUR_CONSUMER_SECRET'
+access_token = 'YOUR_ACCESS_TOKEN'
+access_token_secret = 'YOUR_ACCESS_TOKEN_SECRET'
+
+# Authenticate to Twitter
+auth = tweepy.OAuth1UserHandler(consumer_key, consumer_secret, access_token, access_token_secret)
+api = tweepy.API(auth)
+
+# Define a function to fetch COVID-19 tweets
+def get_tweets(query, count=100):
+    tweets = tweepy.Cursor(api.search, q=query, lang="en").items(count)
+    tweet_list = []
+    for tweet in tweets:
+        tweet_list.append(tweet.text)
+    return tweet_list
+
+# Analyze sentiment of a list of tweets
+def analyze_sentiment(tweets):
+    polarity = 0
+    subjectivity = 0
+    tweet_data = []
+    
+    for tweet in tweets:
+        analysis = TextBlob(tweet)
+        polarity += analysis.sentiment.polarity
+        subjectivity += analysis.sentiment.subjectivity
+        tweet_data.append({'Tweet': tweet, 'Polarity': analysis.sentiment.polarity, 'Subjectivity': analysis.sentiment.subjectivity})
+    
+    avg_polarity = polarity / len(tweets)
+    avg_subjectivity = subjectivity / len(tweets)
+    
+    return avg_polarity, avg_subjectivity, tweet_data
+
+# Fetch COVID-19 related tweets
+tweets = get_tweets("COVID-19", count=200)
+
+# Analyze sentiment
+avg_polarity, avg_subjectivity, tweet_data = analyze_sentiment(tweets)
+
+# Display results
+print(f"Average Polarity: {avg_polarity}")
+print(f"Average Subjectivity: {avg_subjectivity}")
+
+# Create a DataFrame for visualization
+df = pd.DataFrame(tweet_data)
+
+# Plot polarity distribution
+plt.figure(figsize=(10,6))
+plt.hist(df['Polarity'], bins=50, color='blue', alpha=0.7)
+plt.title('Sentiment Polarity Distribution of COVID-19 Tweets')
+plt.xlabel('Polarity')
+plt.ylabel('Frequency')
+plt.show()
+
+# Plot subjectivity distribution
+plt.figure(figsize=(10,6))
+plt.hist(df['Subjectivity'], bins=50, color='green', alpha=0.7)
+plt.title('Sentiment Subjectivity Distribution of COVID-19 Tweets')
+plt.xlabel('Subjectivity')
+plt.ylabel('Frequency')
+plt.show()
